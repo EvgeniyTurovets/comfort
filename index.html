@@ -8787,466 +8787,492 @@ Lasciati ispirare dalla nostra filosofia 👉 link in bio.
                                 </div>
 
                                 <script data-cfasync="false" type="text/javascript">
-                                  var SswInstagramGallery = function ($container, gallery_id, type, product_id, item_selector, min_width, min_distance, columnsCount, min_columns_count) {
-                          var self = this;
-                          var item_width = min_width;
-                          var distance_column = min_distance;
-                          var container_width = $container.width() - 2;
-                          var column_count = 1;
-                          var minColumnsCount = min_columns_count || 1;
-                          var scrolling = false;
-                          this.initVars = function () {
-                            var zoom_percent = 0;
-                            column_count = 1;
-                            if (container_width <= min_width) {
-                              item_width = container_width;
-                              distance_column = min_distance;
-                            } else {
-                              for (var i = columnsCount; i >= minColumnsCount; i--) {
-                                if (min_columns_count > 1 && i === minColumnsCount) {
-                                  zoom_percent = 0;
-                                  distance_column = min_distance;
-                                  column_count = minColumnsCount;
-                                  item_width = (container_width - distance_column * (column_count - 1)) / column_count;
-                                  if (column_count > 1) {
-                                    distance_column = (container_width - item_width * column_count) / column_count;
-                                    distance_column = parseFloat(distance_column.toFixed(2));
-                                  }
-                                  break;
-                                } else {
-                                  var etalon_container_width = min_width * i + ((i - 1) * min_distance);
-                                  if (etalon_container_width <= container_width) {
-                                    zoom_percent = container_width * 100 / etalon_container_width - 100;
-                                    distance_column = min_distance + (min_distance * zoom_percent / 100);
-                                    column_count = columnsCount;
-                                    item_width = (container_width - distance_column * (column_count - 1)) / column_count;
-                                    if (column_count > 1) {
-                                      distance_column = (container_width - item_width * column_count) / (column_count - 1);
-                                      distance_column = parseFloat(distance_column.toFixed(2));
-                                    }
-                                    break;
-                                  }
-                                }
-                              }
-                            }
-                          };
-              
-                          this.checkImagesLoad = function (more_selector) {
-                            more_selector = more_selector || '';
-                            var imagesSelector = '.ssw-instagram-media img' + more_selector;
-                            $container.find(imagesSelector).on('load', function () {
-                              ssw(this).next().hide();
-                              ssw(this).fadeIn("slow");
-                            });
-                            if (type === 'masonry') {
-                              $container.find('.ssw-instagram-media img').on('error', function () {
-                                imageOnError(this);
-                              });
-                            } else {
-                              $container.find(imagesSelector).on('error', function () {
-                                imageOnError(this);
-                              });
-                            }
-                          };
-              
-                          var updateImageOnError = function ({image_id, imgQuality, objectLink, $item, by_short_code_only = false}) {
-                            return (
-                              by_short_code_only ?
-                                getImageByShortcode(objectLink)
-                                :
-                                getGraphImageByLink(objectLink, imgQuality).catch(function (error) { return getImageByShortcode(objectLink) })
-                            )
-                              .catch(function (error) {
-                                if ($item.length) {
-                                  ssw.ajax({
-                                    url: sswProxyUrl + '/lite2/service/index/deleteUnavailablePost',
-                                    type: 'post',
-                                    dataType: 'json',
-                                    data: {id: image_id},
-                                    success: function (response) {
-                                      $item.remove();
-                                    }
-                                  })
-                                }
-                              })
-                              .then(function (image) {
-                                saveImage({
-                                  id: image_id,
-                                  [imgQuality]: image[imgQuality]
-                                })
-                                return image
-                              })
-                          }
-                          var imageOnError = function (el) {
-                            var self = ssw(el);
-                            var $item = self.closest(item_selector);
-                            var objectLink = self.parent().data('object-link');
-                            var image_id = self.closest('.ssw-instagram-item').data('image-id');
-                            var imgQuality = self.attr("data-img-quality");
-              
-                            updateImageOnError({image_id, imgQuality, objectLink, $item})
-                              .then(function (image) {
-                                var $img = self.parent().find('img');
-                                $img.attr('src', image[imgQuality]);
-                                $img.data('image', image[imgQuality]);
-                                $img.attr('data-' + imgQuality + '-src', image[imgQuality]);
-                                if (image.video_url)
-                                  $img.closest('.ssw-instagram-link').attr('data-video-url', image.video_url);
-                              })
-                              .catch(function () {
-                                $item.remove();
-                                if (type !== 'masonry') {
-                                  setItemsStyle();
-                                }
-                              });
-                          };
-              
-                          var getImageByShortcode = function (object_link, returnGraph = false, index = 0) {
-                            return new Promise(function (resolve, reject) {
-                              ssw.ajax({
-                                url: object_link + '?__a=1',
-                                type: 'GET',
-                                success: function (response) {
-                                  if (response && response.graphql && response.graphql.shortcode_media) {
-                                    var media = response.graphql.shortcode_media;
-                                    if (media.edge_sidecar_to_children && media.edge_sidecar_to_children.edges && media.edge_sidecar_to_children.edges.length > 0) {
-                                      if (media.edge_sidecar_to_children.edges[index]) {
-                                        media = media.edge_sidecar_to_children.edges[index].node;
-                                      } else if (index > 0) {
-                                        reject({postExists: true})
-                                        return;
-                                      }
-                                    }
-                                    var thumbnail, low, standard;
-                                    var imageUrl = media.display_resources[0].src;
-                                    for (var i = 0; i < media.display_resources.length; i++) {
-                                      if (media.display_resources[i].config_width < 320) {
-                                        thumbnail = media.display_resources[i].src;
-                                        continue;
-                                      }
-                                      if (media.display_resources[i].config_width < 640) {
-                                        low = media.display_resources[i].src;
-                                        continue;
-                                      }
-                                      standard = media.display_resources[i].src;
-                                    }
-                                    resolve(returnGraph ? response.graphql : {
-                                      video_url: media.is_video ? media.video_url : '',
-                                      low: low || imageUrl,
-                                      standard: standard || imageUrl,
-                                      thumbnail: thumbnail || low || imageUrl,
-                                    });
-                                  } else {
-                                    reject({postExists: true});
-                                  }
-                                }
-                              }).fail(function (xhr) {
-                                reject({postExists: xhr.status !== 404});
-                              });
-                            });
-                          };
-              
-                          var getGraphImageByLink = function (object_link, quality = "low") {
-                            return new Promise(function (resolve, reject) {
-                              const qualityWidthMap = {
-                                'thumbnail': 320,
-                                'low': 640
-                              };
-                              var data = {
-                                url: object_link,
-                                access_token: ssw.fbAppId + "|" + ssw.fbPublicAccessToken,
-                                maxwidth: qualityWidthMap[quality]
-                              };
-                              try {
-                                FB.api(
-                                  "/instagram_oembed",
-                                  data,
-                                  function (response) {
-                                    if (response && !response.error) {
-                                      resolve({
-                                      [quality]: response.thumbnail_url
-                                      });
-                                    } else {
-                                      reject();
-                                    }
-                                  }
-                                );
-                              } catch (e) {
-                                console.error(e);
-                                reject();
-                              }
-                            });
-                          };
-              
-                          var saveImage = function (data) {
-                            return new Promise(function (resolve, reject) {
-                              ssw.ajax({
-                                url: sswProxyUrl + '/lite2/service/index/saveimage',
-                                type: 'POST',
-                                data: data,
-                                success: function (response) {
-                                  resolve(response);
-                                },
-                                error:function (err) {
-                                  reject(err);
-                                }
-                              }, 'json').fail(reject);
-                            });
-                          };
-              
-                          var setItemsStyle = function (more_selector) {
-                            more_selector = more_selector || '';
-                            $container.find(item_selector + more_selector).css('width', item_width + 'px');
-                            /*if (type == 'listing') {
-                              $container.find('.ssw-instagram-media').css('padding', distance_column + 'px');
-                            }*/
-                            $container.find(item_selector + more_selector).css('margin-right', distance_column + 'px');
-                            $container.find(item_selector + more_selector).css('margin-bottom', distance_column + 'px');
-              
-                            $container.find(item_selector + ':nth-of-type(' + column_count + 'n)').css('margin-right', 0);
-                          };
-              
-                          this.showItems = function () {
-                            if (type !== 'masonry')
-                              setItemsStyle(':hidden');
-                            $container.find(item_selector + ':hidden').show();
-                          };
-              
-                          this.initToScroll = function () {
-                            ssw(window).scroll(function () {
-                              if (!self.allowScroll) {
-                                return;
-                              }
-                              if (self.scrollIsBottom()) {
-                                scrolling = false;
-                                if ($container.find(item_selector + ':hidden').length) {
-                                  if ($container.data('ajax-complete') && $container.data('page-count') > $container.data('page')) {
-                                    self.loadItems(false);
-                                  }
-                                  self.showItems();
-                                }
-                                else {
-                                  if ($container.data('ajax-complete') && $container.data('page-count') > $container.data('page')) {
-                                    self.showLoader();
-                                    self.loadItems(true);
-                                  }
-                                  else if ($container.data('page-count') == $container.data('page')) {
-                                    self.hideLoader();
-                                  }
-                                  else {
-                                    scrolling = true;
-                                    self.showLoader();
-                                  }
-                                }
-                              }
-                            });
-                          };
-              
-                          this.showLoader = function () {
-                            $container.find('.ssw-instagram-loader').show();
-                          };
-              
-                          this.hideLoader = function () {
-                            $container.find('.ssw-instagram-loader').hide();
-                          };
-              
-                          this.loadItems = function (show) {
-                            let $lastItem = $container.find('.ssw-instagram-items > div:last-child');
-                            $container.data('last_creation_time', $lastItem.data('creation_time'));
-                            if ($container.data('ajax-complete') && $container.data('page-count') > $container.data('page')) {
-                              $container.data('ajax-complete', 0);
-                              var data_widget = $container.closest('.ssw-html-widget').data();
-                              var data = {
-                                'module': 'service',
-                                'name': 'InstagramPhotos',
-                                'gallery_id': gallery_id,
-                                'type': type,
-                                'product_id': product_id,
-                                '_sid': sswCookie('hesid'),
-                                'hash_key': sswCookie('hash_key'),
-                                'page': $container.data('page') + 1,
-                                'last_creation_time': $container.data('last_creation_time'),
-                                'rows_count': 1,
-                                'columns_count_for_grid': 4,
-                                'spaces': 5,
-                                'instagram_ipp': 15                };
-              
-                              if(data_widget){
-                                for(var key in data_widget)if(!data[key]){
-                                  data[key] = data_widget[key];
-                                }
-                              }
-              
-                              ssw.get(sswProxyUrl + '/lite2/core/widget/index', data, function (response) {
-                                $container.find('.ssw-instagram-items').append(response);
-                                $container.data('page', data.page);
-                                if ($container.data('page-count') <= data.page) {
-                                  $container.find('.ssw-instagram-load-more').hide();
-                                } else {
-                                                      $container.find('.ssw-instagram-load-more').show();
+                                    var SswInstagramGallery = function($container, gallery_id, type, product_id, item_selector, min_width, min_distance, columnsCount, min_columns_count) {
+                                        var self = this;
+                                        var item_width = min_width;
+                                        var distance_column = min_distance;
+                                        var container_width = $container.width() - 2;
+                                        var column_count = 1;
+                                        var minColumnsCount = min_columns_count || 1;
+                                        var scrolling = false;
+                                        this.initVars = function() {
+                                            var zoom_percent = 0;
+                                            column_count = 1;
+                                            if (container_width <= min_width) {
+                                                item_width = container_width;
+                                                distance_column = min_distance;
+                                            } else {
+                                                for (var i = columnsCount; i >= minColumnsCount; i--) {
+                                                    if (min_columns_count > 1 && i === minColumnsCount) {
+                                                        zoom_percent = 0;
+                                                        distance_column = min_distance;
+                                                        column_count = minColumnsCount;
+                                                        item_width = (container_width - distance_column * (column_count - 1)) / column_count;
+                                                        if (column_count > 1) {
+                                                            distance_column = (container_width - item_width * column_count) / column_count;
+                                                            distance_column = parseFloat(distance_column.toFixed(2));
+                                                        }
+                                                        break;
+                                                    } else {
+                                                        var etalon_container_width = min_width * i + ((i - 1) * min_distance);
+                                                        if (etalon_container_width <= container_width) {
+                                                            zoom_percent = container_width * 100 / etalon_container_width - 100;
+                                                            distance_column = min_distance + (min_distance * zoom_percent / 100);
+                                                            column_count = columnsCount;
+                                                            item_width = (container_width - distance_column * (column_count - 1)) / column_count;
+                                                            if (column_count > 1) {
+                                                                distance_column = (container_width - item_width * column_count) / (column_count - 1);
+                                                                distance_column = parseFloat(distance_column.toFixed(2));
+                                                            }
+                                                            break;
+                                                        }
                                                     }
-                                self.checkImagesLoad(':hidden');
-                                if (show || scrolling) {
-                                  self.hideLoader();
-                                  self.showItems();
-                                  self.loadItems(false);
-                                  scrolling = false;
-                                }
-                                $container.data('ajax-complete', 1);
-                                self.lazyLoad();
-                                self.ready();
-                              }, 'html', {
-                                fail: function() {
-                                  self.hideLoader();
-                                }
-                              });
-                            } else {
-                              self.hideLoader();
-                            }
-                          };
-              
-                          this.scrollIsBottom = function () {
-                            if (ssw(window).scrollTop() >= $container.offset().top + $container.outerHeight() - window.innerHeight) {
-                              return true;
-                            }
-                            return false;
-                          };
-              
-                          this.onContainerResize = function () {
-                            container_width = $container.width() - 2;
-                            self.initVars();
-                            if (type !== 'masonry')
-                              setItemsStyle();
-                          };
-              
-                          ssw(window).resize(function () {
-                            if ($container.width() != container_width) {
-                              self.onContainerResize();
-                            }
-                          });
-              
-                          this.initLoadMoreBtn = function () {
-                                          $container.find('.ssw-instagram-load-more').find('a').click(function (e) {
-                              if ($container.data('page-count') > $container.data('page') /*&& $container.data('page') <= 2*/) {
-                                self.showLoader();
-                                self.showItems();
-                                self.loadItems(true);
-                                $container.find('.ssw-instagram-load-more').hide();
-                              }
-                            });
-                          };
-              
-                          this.lazyLoad = function() {
-                            var useHigherQuality = ssw.instagramImagesHighQuality || 0;
-                            var imageItemQuality = useHigherQuality ? "low" : "thumbnail";
-                            if (item_width > 320) {
-                              imageItemQuality = useHigherQuality ? "standard" : "low";
-                            } else if (item_width > 640) {
-                              imageItemQuality = "standard";
-                            }
-                            var instagramMasonrySmallImagesSelector = '.ssw-instagram-widget .ssw-instagram-item';
-                            var containerWidth = ssw(window).width();
-              
-                            if (containerWidth >= 768 && ssw( sswInstagramContainerSelector + '.ssw-instagram-masonry').length > 0) {
-                              instagramMasonrySmallImagesSelector += ':not(:nth-child(18n-17))';
-                              instagramMasonrySmallImagesSelector += ':not(:nth-child(18n-10))';
-                              instagramMasonrySmallImagesSelector += ':not(:nth-child(18n-3))';
-                              instagramMasonrySmallImagesSelector += ':not(:nth-child(18n-1))';
-                            }
-                            instagramMasonrySmallImagesSelector += ' img:not(.ssw-lazy-loaded)';
-              
-                            sswLazyLoad(null, instagramMasonrySmallImagesSelector, {data_attr: 'data-' + imageItemQuality + '-src'});
-                            ssw(instagramMasonrySmallImagesSelector).attr("data-img-quality", imageItemQuality).addClass("ssw-lazy-loaded");
-              
-                            if (containerWidth >= 768 && ssw( sswInstagramContainerSelector + '.ssw-instagram-masonry').length > 0) {
-                              var masonryLazyLoadSelectorItems = [
-                                sswInstagramContainerSelector + '.ssw-instagram-masonry .ssw-instagram-item:nth-child(18n-17) img:not(.ssw-lazy-loaded)',
-                                sswInstagramContainerSelector + '.ssw-instagram-masonry .ssw-instagram-item:nth-child(18n-10) img:not(.ssw-lazy-loaded)',
-                                sswInstagramContainerSelector + '.ssw-instagram-masonry .ssw-instagram-item:nth-child(18n-3) img:not(.ssw-lazy-loaded)',
-                                sswInstagramContainerSelector + '.ssw-instagram-masonry .ssw-instagram-item:nth-child(18n-1) img:not(.ssw-lazy-loaded)'
-                              ];
-                              var masonryBigItemWidth = ssw(sswInstagramContainerSelector + '.ssw-instagram-masonry .ssw-instagram-item:nth-child(18n-1):first').width();
-                              imageItemQuality = useHigherQuality ? "low" : "thumbnail";
-                              if (masonryBigItemWidth > 320) {
-                                imageItemQuality = useHigherQuality ? "standard" : "low";
-                              } else if (masonryBigItemWidth > 640) {
-                                imageItemQuality = "standard";
-                              }
-                              for (let i = 0; i < masonryLazyLoadSelectorItems.length; i++) {
-                                sswLazyLoad(null, masonryLazyLoadSelectorItems[i], {data_attr: 'data-' + imageItemQuality + '-src'});
-                                ssw(masonryLazyLoadSelectorItems[i]).attr("data-img-quality", imageItemQuality).addClass("ssw-lazy-loaded");
-                              }
-                            }
-                          }
-                          this.ready = function() {
-                            if (typeof window.FB === "undefined") {
-                              sswAddEventListener('sswInstagramFbAsyncInited', function(){
-                                sswDispatchEvent('sswInstagramContentReady', {
-                                  detail: {},
-                                  bubbles: true,
-                                  cancelable: false
-                                });
-                              });
-                            } else {
-                              sswDispatchEvent('sswInstagramContentReady', {
-                                detail: {},
-                                bubbles: true,
-                                cancelable: false
-                              });
-                            }
-                          };
-                          self.checkImagesLoad(':hidden');
-                          self.initVars();
-                          self.showItems();
-                          self.initToScroll();
-                          self.initLoadMoreBtn();
-                          //self.loadItems(false);
-              
-                          // Redraw items if container width changed
-                          if ($container.width() != container_width) {
-                            self.onContainerResize();
-                          }
-                          self.lazyLoad();
-                          self.ready();
-                        };
-              
-                        ssw(document).ready(function () {
-                          if (navigator.userAgent.indexOf('Android') != -1 || navigator.userAgent.indexOf('android') != -1) {
-                            ssw('#ssw-instagram-android-upload').css('display', '');
-                          } else if (navigator.userAgent.indexOf('iPhone') != -1 || navigator.userAgent.indexOf('iphone') != -1 ||
-                            navigator.userAgent.indexOf('iPad') != -1 || navigator.userAgent.indexOf('ipad') != -1 ||
-                            navigator.userAgent.indexOf('iPod') != -1 || navigator.userAgent.indexOf('ipod') != -1) {
-                            ssw('#ssw-instagram-ios-upload').css('display', '');
-                          } else {
-                            ssw('#ssw-instagram-android-upload').css('display', 'none');
-                            ssw('#ssw-instagram-ios-upload').css('display', 'none');
-                          }
-                        });
-                                  ssw.fbAppId = 150722575101290;
-                        ssw.fbPublicAccessToken = "3f4d52515c12761705e04cf14a025321";
-                        ssw.instagramImagesHighQuality = 0;
-                                  var sswInstagramType = 'grid', sswInstagramGalleryId = 1, sswInstagramProductId = 0;
-                        var sswInstagramContainerSelector = '#ssw-instagram-photos-' + sswInstagramType + sswInstagramGalleryId + sswInstagramProductId;
-                        var $sswInstagramContainer = ssw(sswInstagramContainerSelector);
-              
-                        var columnsCount = parseInt('4');
-                        var minColumnsCount = parseInt('2');
-                        var sswInstagramMinWidth = 250, sswInstagramMinDistance = 15;
-                        if (sswInstagramType === 'grid' || sswInstagramType === 'listing') {
-                          sswInstagramMinWidth = 220;
-                          sswInstagramMinDistance = parseInt('5');
-                        }
-                        new SswInstagramGallery($sswInstagramContainer, sswInstagramGalleryId, sswInstagramType, sswInstagramProductId, '.ssw-instagram-item', sswInstagramMinWidth, sswInstagramMinDistance, columnsCount, minColumnsCount);
-              
-                        if (typeof customInstagramWidgetAfter == 'function') {
-                          customInstagramWidgetAfter();
-                        }
-                        sswDispatchEvent('sswInstagramAppContentLoaded', {
-                          detail: {},
-                          bubbles: true,
-                          cancelable: false
-                        });
-                      </script>
+                                                }
+                                            }
+                                        };
+
+                                        this.checkImagesLoad = function(more_selector) {
+                                            more_selector = more_selector || '';
+                                            var imagesSelector = '.ssw-instagram-media img' + more_selector;
+                                            $container.find(imagesSelector).on('load', function() {
+                                                ssw(this).next().hide();
+                                                ssw(this).fadeIn("slow");
+                                            });
+                                            if (type === 'masonry') {
+                                                $container.find('.ssw-instagram-media img').on('error', function() {
+                                                    imageOnError(this);
+                                                });
+                                            } else {
+                                                $container.find(imagesSelector).on('error', function() {
+                                                    imageOnError(this);
+                                                });
+                                            }
+                                        };
+
+                                        var updateImageOnError = function({
+                                            image_id,
+                                            imgQuality,
+                                            objectLink,
+                                            $item,
+                                            by_short_code_only = false
+                                        }) {
+                                            return (
+                                                    by_short_code_only ?
+                                                    getImageByShortcode(objectLink) :
+                                                    getGraphImageByLink(objectLink, imgQuality).catch(function(error) {
+                                                        return getImageByShortcode(objectLink)
+                                                    })
+                                                )
+                                                .catch(function(error) {
+                                                    if ($item.length) {
+                                                        ssw.ajax({
+                                                            url: sswProxyUrl + '/lite2/service/index/deleteUnavailablePost',
+                                                            type: 'post',
+                                                            dataType: 'json',
+                                                            data: {
+                                                                id: image_id
+                                                            },
+                                                            success: function(response) {
+                                                                $item.remove();
+                                                            }
+                                                        })
+                                                    }
+                                                })
+                                                .then(function(image) {
+                                                    saveImage({
+                                                        id: image_id,
+                                                        [imgQuality]: image[imgQuality]
+                                                    })
+                                                    return image
+                                                })
+                                        }
+                                        var imageOnError = function(el) {
+                                            var self = ssw(el);
+                                            var $item = self.closest(item_selector);
+                                            var objectLink = self.parent().data('object-link');
+                                            var image_id = self.closest('.ssw-instagram-item').data('image-id');
+                                            var imgQuality = self.attr("data-img-quality");
+
+                                            updateImageOnError({
+                                                    image_id,
+                                                    imgQuality,
+                                                    objectLink,
+                                                    $item
+                                                })
+                                                .then(function(image) {
+                                                    var $img = self.parent().find('img');
+                                                    $img.attr('src', image[imgQuality]);
+                                                    $img.data('image', image[imgQuality]);
+                                                    $img.attr('data-' + imgQuality + '-src', image[imgQuality]);
+                                                    if (image.video_url)
+                                                        $img.closest('.ssw-instagram-link').attr('data-video-url', image.video_url);
+                                                })
+                                                .catch(function() {
+                                                    $item.remove();
+                                                    if (type !== 'masonry') {
+                                                        setItemsStyle();
+                                                    }
+                                                });
+                                        };
+
+                                        var getImageByShortcode = function(object_link, returnGraph = false, index = 0) {
+                                            return new Promise(function(resolve, reject) {
+                                                ssw.ajax({
+                                                    url: object_link + '?__a=1',
+                                                    type: 'GET',
+                                                    success: function(response) {
+                                                        if (response && response.graphql && response.graphql.shortcode_media) {
+                                                            var media = response.graphql.shortcode_media;
+                                                            if (media.edge_sidecar_to_children && media.edge_sidecar_to_children.edges && media.edge_sidecar_to_children.edges.length > 0) {
+                                                                if (media.edge_sidecar_to_children.edges[index]) {
+                                                                    media = media.edge_sidecar_to_children.edges[index].node;
+                                                                } else if (index > 0) {
+                                                                    reject({
+                                                                        postExists: true
+                                                                    })
+                                                                    return;
+                                                                }
+                                                            }
+                                                            var thumbnail, low, standard;
+                                                            var imageUrl = media.display_resources[0].src;
+                                                            for (var i = 0; i < media.display_resources.length; i++) {
+                                                                if (media.display_resources[i].config_width < 320) {
+                                                                    thumbnail = media.display_resources[i].src;
+                                                                    continue;
+                                                                }
+                                                                if (media.display_resources[i].config_width < 640) {
+                                                                    low = media.display_resources[i].src;
+                                                                    continue;
+                                                                }
+                                                                standard = media.display_resources[i].src;
+                                                            }
+                                                            resolve(returnGraph ? response.graphql : {
+                                                                video_url: media.is_video ? media.video_url : '',
+                                                                low: low || imageUrl,
+                                                                standard: standard || imageUrl,
+                                                                thumbnail: thumbnail || low || imageUrl,
+                                                            });
+                                                        } else {
+                                                            reject({
+                                                                postExists: true
+                                                            });
+                                                        }
+                                                    }
+                                                }).fail(function(xhr) {
+                                                    reject({
+                                                        postExists: xhr.status !== 404
+                                                    });
+                                                });
+                                            });
+                                        };
+
+                                        var getGraphImageByLink = function(object_link, quality = "low") {
+                                            return new Promise(function(resolve, reject) {
+                                                const qualityWidthMap = {
+                                                    'thumbnail': 320,
+                                                    'low': 640
+                                                };
+                                                var data = {
+                                                    url: object_link,
+                                                    access_token: ssw.fbAppId + "|" + ssw.fbPublicAccessToken,
+                                                    maxwidth: qualityWidthMap[quality]
+                                                };
+                                                try {
+                                                    FB.api(
+                                                        "/instagram_oembed",
+                                                        data,
+                                                        function(response) {
+                                                            if (response && !response.error) {
+                                                                resolve({
+                                                                    [quality]: response.thumbnail_url
+                                                                });
+                                                            } else {
+                                                                reject();
+                                                            }
+                                                        }
+                                                    );
+                                                } catch (e) {
+                                                    console.error(e);
+                                                    reject();
+                                                }
+                                            });
+                                        };
+
+                                        var saveImage = function(data) {
+                                            return new Promise(function(resolve, reject) {
+                                                ssw.ajax({
+                                                    url: sswProxyUrl + '/lite2/service/index/saveimage',
+                                                    type: 'POST',
+                                                    data: data,
+                                                    success: function(response) {
+                                                        resolve(response);
+                                                    },
+                                                    error: function(err) {
+                                                        reject(err);
+                                                    }
+                                                }, 'json').fail(reject);
+                                            });
+                                        };
+
+                                        var setItemsStyle = function(more_selector) {
+                                            more_selector = more_selector || '';
+                                            $container.find(item_selector + more_selector).css('width', item_width + 'px');
+                                            /*if (type == 'listing') {
+                                              $container.find('.ssw-instagram-media').css('padding', distance_column + 'px');
+                                            }*/
+                                            $container.find(item_selector + more_selector).css('margin-right', distance_column + 'px');
+                                            $container.find(item_selector + more_selector).css('margin-bottom', distance_column + 'px');
+
+                                            $container.find(item_selector + ':nth-of-type(' + column_count + 'n)').css('margin-right', 0);
+                                        };
+
+                                        this.showItems = function() {
+                                            if (type !== 'masonry')
+                                                setItemsStyle(':hidden');
+                                            $container.find(item_selector + ':hidden').show();
+                                        };
+
+                                        this.initToScroll = function() {
+                                            ssw(window).scroll(function() {
+                                                if (!self.allowScroll) {
+                                                    return;
+                                                }
+                                                if (self.scrollIsBottom()) {
+                                                    scrolling = false;
+                                                    if ($container.find(item_selector + ':hidden').length) {
+                                                        if ($container.data('ajax-complete') && $container.data('page-count') > $container.data('page')) {
+                                                            self.loadItems(false);
+                                                        }
+                                                        self.showItems();
+                                                    } else {
+                                                        if ($container.data('ajax-complete') && $container.data('page-count') > $container.data('page')) {
+                                                            self.showLoader();
+                                                            self.loadItems(true);
+                                                        } else if ($container.data('page-count') == $container.data('page')) {
+                                                            self.hideLoader();
+                                                        } else {
+                                                            scrolling = true;
+                                                            self.showLoader();
+                                                        }
+                                                    }
+                                                }
+                                            });
+                                        };
+
+                                        this.showLoader = function() {
+                                            $container.find('.ssw-instagram-loader').show();
+                                        };
+
+                                        this.hideLoader = function() {
+                                            $container.find('.ssw-instagram-loader').hide();
+                                        };
+
+                                        this.loadItems = function(show) {
+                                            let $lastItem = $container.find('.ssw-instagram-items > div:last-child');
+                                            $container.data('last_creation_time', $lastItem.data('creation_time'));
+                                            if ($container.data('ajax-complete') && $container.data('page-count') > $container.data('page')) {
+                                                $container.data('ajax-complete', 0);
+                                                var data_widget = $container.closest('.ssw-html-widget').data();
+                                                var data = {
+                                                    'module': 'service',
+                                                    'name': 'InstagramPhotos',
+                                                    'gallery_id': gallery_id,
+                                                    'type': type,
+                                                    'product_id': product_id,
+                                                    '_sid': sswCookie('hesid'),
+                                                    'hash_key': sswCookie('hash_key'),
+                                                    'page': $container.data('page') + 1,
+                                                    'last_creation_time': $container.data('last_creation_time'),
+                                                    'rows_count': 1,
+                                                    'columns_count_for_grid': 4,
+                                                    'spaces': 5,
+                                                    'instagram_ipp': 15
+                                                };
+
+                                                if (data_widget) {
+                                                    for (var key in data_widget)
+                                                        if (!data[key]) {
+                                                            data[key] = data_widget[key];
+                                                        }
+                                                }
+
+                                                ssw.get(sswProxyUrl + '/lite2/core/widget/index', data, function(response) {
+                                                    $container.find('.ssw-instagram-items').append(response);
+                                                    $container.data('page', data.page);
+                                                    if ($container.data('page-count') <= data.page) {
+                                                        $container.find('.ssw-instagram-load-more').hide();
+                                                    } else {
+                                                        $container.find('.ssw-instagram-load-more').show();
+                                                    }
+                                                    self.checkImagesLoad(':hidden');
+                                                    if (show || scrolling) {
+                                                        self.hideLoader();
+                                                        self.showItems();
+                                                        self.loadItems(false);
+                                                        scrolling = false;
+                                                    }
+                                                    $container.data('ajax-complete', 1);
+                                                    self.lazyLoad();
+                                                    self.ready();
+                                                }, 'html', {
+                                                    fail: function() {
+                                                        self.hideLoader();
+                                                    }
+                                                });
+                                            } else {
+                                                self.hideLoader();
+                                            }
+                                        };
+
+                                        this.scrollIsBottom = function() {
+                                            if (ssw(window).scrollTop() >= $container.offset().top + $container.outerHeight() - window.innerHeight) {
+                                                return true;
+                                            }
+                                            return false;
+                                        };
+
+                                        this.onContainerResize = function() {
+                                            container_width = $container.width() - 2;
+                                            self.initVars();
+                                            if (type !== 'masonry')
+                                                setItemsStyle();
+                                        };
+
+                                        ssw(window).resize(function() {
+                                            if ($container.width() != container_width) {
+                                                self.onContainerResize();
+                                            }
+                                        });
+
+                                        this.initLoadMoreBtn = function() {
+                                            $container.find('.ssw-instagram-load-more').find('a').click(function(e) {
+                                                if ($container.data('page-count') > $container.data('page') /*&& $container.data('page') <= 2*/ ) {
+                                                    self.showLoader();
+                                                    self.showItems();
+                                                    self.loadItems(true);
+                                                    $container.find('.ssw-instagram-load-more').hide();
+                                                }
+                                            });
+                                        };
+
+                                        this.lazyLoad = function() {
+                                            var useHigherQuality = ssw.instagramImagesHighQuality || 0;
+                                            var imageItemQuality = useHigherQuality ? "low" : "thumbnail";
+                                            if (item_width > 320) {
+                                                imageItemQuality = useHigherQuality ? "standard" : "low";
+                                            } else if (item_width > 640) {
+                                                imageItemQuality = "standard";
+                                            }
+                                            var instagramMasonrySmallImagesSelector = '.ssw-instagram-widget .ssw-instagram-item';
+                                            var containerWidth = ssw(window).width();
+
+                                            if (containerWidth >= 768 && ssw(sswInstagramContainerSelector + '.ssw-instagram-masonry').length > 0) {
+                                                instagramMasonrySmallImagesSelector += ':not(:nth-child(18n-17))';
+                                                instagramMasonrySmallImagesSelector += ':not(:nth-child(18n-10))';
+                                                instagramMasonrySmallImagesSelector += ':not(:nth-child(18n-3))';
+                                                instagramMasonrySmallImagesSelector += ':not(:nth-child(18n-1))';
+                                            }
+                                            instagramMasonrySmallImagesSelector += ' img:not(.ssw-lazy-loaded)';
+
+                                            sswLazyLoad(null, instagramMasonrySmallImagesSelector, {
+                                                data_attr: 'data-' + imageItemQuality + '-src'
+                                            });
+                                            ssw(instagramMasonrySmallImagesSelector).attr("data-img-quality", imageItemQuality).addClass("ssw-lazy-loaded");
+
+                                            if (containerWidth >= 768 && ssw(sswInstagramContainerSelector + '.ssw-instagram-masonry').length > 0) {
+                                                var masonryLazyLoadSelectorItems = [
+                                                    sswInstagramContainerSelector + '.ssw-instagram-masonry .ssw-instagram-item:nth-child(18n-17) img:not(.ssw-lazy-loaded)',
+                                                    sswInstagramContainerSelector + '.ssw-instagram-masonry .ssw-instagram-item:nth-child(18n-10) img:not(.ssw-lazy-loaded)',
+                                                    sswInstagramContainerSelector + '.ssw-instagram-masonry .ssw-instagram-item:nth-child(18n-3) img:not(.ssw-lazy-loaded)',
+                                                    sswInstagramContainerSelector + '.ssw-instagram-masonry .ssw-instagram-item:nth-child(18n-1) img:not(.ssw-lazy-loaded)'
+                                                ];
+                                                var masonryBigItemWidth = ssw(sswInstagramContainerSelector + '.ssw-instagram-masonry .ssw-instagram-item:nth-child(18n-1):first').width();
+                                                imageItemQuality = useHigherQuality ? "low" : "thumbnail";
+                                                if (masonryBigItemWidth > 320) {
+                                                    imageItemQuality = useHigherQuality ? "standard" : "low";
+                                                } else if (masonryBigItemWidth > 640) {
+                                                    imageItemQuality = "standard";
+                                                }
+                                                for (let i = 0; i < masonryLazyLoadSelectorItems.length; i++) {
+                                                    sswLazyLoad(null, masonryLazyLoadSelectorItems[i], {
+                                                        data_attr: 'data-' + imageItemQuality + '-src'
+                                                    });
+                                                    ssw(masonryLazyLoadSelectorItems[i]).attr("data-img-quality", imageItemQuality).addClass("ssw-lazy-loaded");
+                                                }
+                                            }
+                                        }
+                                        this.ready = function() {
+                                            if (typeof window.FB === "undefined") {
+                                                sswAddEventListener('sswInstagramFbAsyncInited', function() {
+                                                    sswDispatchEvent('sswInstagramContentReady', {
+                                                        detail: {},
+                                                        bubbles: true,
+                                                        cancelable: false
+                                                    });
+                                                });
+                                            } else {
+                                                sswDispatchEvent('sswInstagramContentReady', {
+                                                    detail: {},
+                                                    bubbles: true,
+                                                    cancelable: false
+                                                });
+                                            }
+                                        };
+                                        self.checkImagesLoad(':hidden');
+                                        self.initVars();
+                                        self.showItems();
+                                        self.initToScroll();
+                                        self.initLoadMoreBtn();
+                                        //self.loadItems(false);
+
+                                        // Redraw items if container width changed
+                                        if ($container.width() != container_width) {
+                                            self.onContainerResize();
+                                        }
+                                        self.lazyLoad();
+                                        self.ready();
+                                    };
+
+                                    ssw(document).ready(function() {
+                                        if (navigator.userAgent.indexOf('Android') != -1 || navigator.userAgent.indexOf('android') != -1) {
+                                            ssw('#ssw-instagram-android-upload').css('display', '');
+                                        } else if (navigator.userAgent.indexOf('iPhone') != -1 || navigator.userAgent.indexOf('iphone') != -1 ||
+                                            navigator.userAgent.indexOf('iPad') != -1 || navigator.userAgent.indexOf('ipad') != -1 ||
+                                            navigator.userAgent.indexOf('iPod') != -1 || navigator.userAgent.indexOf('ipod') != -1) {
+                                            ssw('#ssw-instagram-ios-upload').css('display', '');
+                                        } else {
+                                            ssw('#ssw-instagram-android-upload').css('display', 'none');
+                                            ssw('#ssw-instagram-ios-upload').css('display', 'none');
+                                        }
+                                    });
+                                    ssw.fbAppId = 150722575101290;
+                                    ssw.fbPublicAccessToken = "3f4d52515c12761705e04cf14a025321";
+                                    ssw.instagramImagesHighQuality = 0;
+                                    var sswInstagramType = 'grid',
+                                        sswInstagramGalleryId = 1,
+                                        sswInstagramProductId = 0;
+                                    var sswInstagramContainerSelector = '#ssw-instagram-photos-' + sswInstagramType + sswInstagramGalleryId + sswInstagramProductId;
+                                    var $sswInstagramContainer = ssw(sswInstagramContainerSelector);
+
+                                    var columnsCount = parseInt('4');
+                                    var minColumnsCount = parseInt('2');
+                                    var sswInstagramMinWidth = 250,
+                                        sswInstagramMinDistance = 15;
+                                    if (sswInstagramType === 'grid' || sswInstagramType === 'listing') {
+                                        sswInstagramMinWidth = 220;
+                                        sswInstagramMinDistance = parseInt('5');
+                                    }
+                                    new SswInstagramGallery($sswInstagramContainer, sswInstagramGalleryId, sswInstagramType, sswInstagramProductId, '.ssw-instagram-item', sswInstagramMinWidth, sswInstagramMinDistance, columnsCount, minColumnsCount);
+
+                                    if (typeof customInstagramWidgetAfter == 'function') {
+                                        customInstagramWidgetAfter();
+                                    }
+                                    sswDispatchEvent('sswInstagramAppContentLoaded', {
+                                        detail: {},
+                                        bubbles: true,
+                                        cancelable: false
+                                    });
+                                </script>
                             </div>
                         </div>
                     </div>
