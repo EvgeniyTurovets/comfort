@@ -1,0 +1,411 @@
+// ADD A SACHET TO CART
+var addSachetToCart = function(variantID){
+
+  var list ='';
+  
+  if (typeof template != 'undefined' && template == 'search') {
+    list = 'search_result';
+  } else {
+    list = 'cart';  
+  }
+
+    $.ajax({
+        url: '/cart/add.js',
+        dataType: 'json',
+        cache: false,
+        type: 'post',
+        data: { quantity: 1, id: variantID },
+        success: function(data) {
+            if(typeof dataLayer == 'object'){
+              dataLayer.push({
+                  'event': 'addToCart',
+                  'ecommerce': {
+                  'currencyCode': GTM.currency_code,
+                  'add': {
+                      'actionField': {
+                                      
+                      'list': list
+                      },
+                      'products': [{
+                      'name': GTM.formatString(data.product_title),
+                      'id': data.id,
+                      'price': data.price,
+                      'brand': GTM.formatString(data.vendor),
+                      'category': GTM.formatString(data.product_type),
+                      'quantity': 1
+                      }]
+                  }
+                  }
+              });
+                
+              /* GTM add_single_dose */
+
+              dataLayer.push({
+                  'event': 'GAevent',
+                  'eventID': '14',
+                  'eventCategory': 'mini_cart',
+                  'eventAction': 'add_single_dose',
+                  'eventLabel': GTM.formatString(data.product_title),
+                  'sku': data.sku
+              });
+            }
+
+           $.ajax({
+                url: '/cart.js',
+                dataType: "json",
+                cache: false,
+                success: function(cart) {
+                  refreshCart(cart);
+                }
+            });
+
+        },
+        error: function(data) {
+            console.log("error");
+            console.log(data);
+        }
+    });
+};
+// REMOVE A SACHET FROM CART
+var removeSachetToCart = function(variantID){
+
+    $.ajax({
+        url: '/cart/change.js',
+        dataType: 'json',
+        cache: false,
+        type: 'post',
+        data: { quantity: 0, id: variantID },
+        success: function(data) {
+            refreshCart(data);          
+        },
+        error: function(data) {
+            console.log("error");
+            console.log(data);
+        }
+    });
+};
+// EMPTY THE CART
+var emptyCart = function(){
+    $.ajax({
+        url: '/cart/clear.js',
+        dataType: 'json',
+        cache: false,
+        type: 'post',
+        success: function(data){
+          refreshCart(data);
+        },
+        error: function(data) {
+            console.log("error");
+            console.log(data);
+        }
+    });
+};
+// CHANGE A SACHET QUANTITY
+var changeSachetQuantity = function($variantID, $quantity){
+  $.ajax({
+    url: '/cart/change.js',
+    dataType: 'json',
+    cache: false,
+    type: 'post',
+    data: { quantity: $quantity, id: $variantID },
+    success: function(data) {
+        refreshCart(data);
+    },
+    error: function(data) {
+        console.log("error");
+        console.log(data);
+    }
+  });
+};
+
+// SET DISTANCE FROM FREE SHIPPING
+var setFreeShippingDistance = function(totalCart){
+  let freeshippingLimit = 58.99 * 100;
+  let html_content = "";
+
+  if( totalCart >= freeshippingLimit ){
+    html_content += "<span>Evviva!</span><span>Hai diritto alla spedizione standard gratuita</span>";
+  }
+  else{
+    html_content += "<span>Ehi, ti mancano ancora " +
+                      Shopify.formatMoney((freeshippingLimit - totalCart), $('body').data('money-format')) +
+                    " per avere la spedizione standard gratuita!</span>";
+  }
+  $('.dav-minicart').each( function(){
+    $(this).find('.cart_freeshipping .text').html(html_content);
+  });
+};
+
+//REBUILD THE CART
+function refreshCart(cart){
+    $(".cart_count").empty();
+    $cartBtn = $(".cart_count");
+    var value = $cartBtn.text() || '0';
+    var cart_items_html = "";
+    var cart_action_html = "";
+    var cart_savings_html = "";
+    var $cart = $(".cart_content form");
+    var discounted_price_total = 0;
+    var total_savings = 0;
+
+    $cartBtn.text(value.replace(/[0-9]+/,cart.item_count));
+
+    if (cart.item_count == 0) {
+      $('.js-empty-cart__message').removeClass('hidden');
+      $('.js-cart_content__form').addClass('hidden');
+    } else {
+      $('.js-empty-cart__message').addClass('hidden');
+      $('.js-cart_content__form').removeClass('hidden');
+
+      $.each(cart.items, function(index, item) {
+        var line_id = index + 1;
+
+                if (item.product_type !="MOTIVATOR_HIDDEN_PRODUCT" && item.product_type !="sachet") {
+                cart_items_html += '<li class="cart_item clearfix">' +
+                '<a href="' + item.url +'">';
+                if (item.image) {
+                    cart_items_html += '<div class="cart_image">' +
+                    '<img src="' + item.image.replace(/(\.[^.]*)$/, "_compact$1").replace('http:', '') + '" alt="' + htmlEncode(item.title) + '" />' +
+                    '</div>';
+                }
+                cart_items_html += '</a>';
+                } else {
+               cart_items_html += '<li class="cart_item clearfix">' 
+                if (item.image) {
+                    cart_items_html += '<div class="cart_image">' +
+                    '<img src="' + item.image.replace(/(\.[^.]*)$/, "_compact$1").replace('http:', '') + '" alt="' + htmlEncode(item.title) + '" />' +
+                    '</div>';
+                }
+                cart_items_html += '</a>';
+                
+                }
+                cart_items_html += '<div class="cart_item__title">' +
+                          '<div class="item_title">' + item.title;
+                          
+        if(item.properties) {
+          $.each(item.properties, function(title, value) {
+            if (value) {
+
+                if(title == 'max'){
+                    var tmpStr = "Massimo <b>###</b> pz.";
+                    cart_items_html += '<div class="line-item">' + tmpStr.replace('###',value) + '</div>';
+                } else {
+
+                    cart_items_html += '<div class="line-item">' +
+                                        title +
+                                        ': ' +
+                                        value +
+                                        '</div>';
+                    
+                }
+            }
+          });
+        }
+        cart_items_html += '</div>';
+        if(item.product_type != "sachet" && item.product_type != "MOTIVATOR_HIDDEN_PRODUCT"){
+        cart_items_html += '<span class="clearfix quantity">Quantità</span>' +
+                  '<div class="left product-quantity-box">' +
+                    '<span class="ss-icon product-minus js-change-quantity" data-func="minus" product-id="' + item.variant_id + '" product-name="' + item.product_title + '" product-price="' + item.price + '"product-brand="' + item.vendor + '" product-type="' + item.product_type + '" product-size="' + item.variant_title + '" position="' + index + '"><span class="icon-minus"></span></span>' +
+                    '<input type="number" min="0" class="quantity" name="updates[]" id="updates_' + item.id + '" value="' + item.quantity +'" data-line-id="' + line_id +'" />' +
+                    '<span class="ss-icon product-plus js-change-quantity" data-func="plus" product-id="' + item.variant_id + '" product-name="' + item.product_title + '" product-price="' + item.price + '"product-brand="' + item.vendor + '" product-type="' + item.product_type + '" product-size="' + item.variant_title + '" position="' + index + '"><span class="minicart icon-plus"></span></span>' +
+                    '</div>';
+        }
+        cart_items_html += '</div>';
+        cart_items_html += '<strong class="right price">';
+        
+          $.ajax({
+            dataType: "json",
+            async: false,
+            cache: false,
+            url: "/products/" + item.handle + ".js",
+            success: function(data) {
+              var variant_id = item.variant_id;
+              var variant = $.grep(data.variants, function(v) {
+                return v.id == variant_id;
+              });
+              if(variant[0] && variant[0].compare_at_price > item.price) {
+                cart_items_html += ' <span class="money was_price">' + Shopify.formatMoney(variant[0].compare_at_price, $('body').data('money-format')) + '</span> ';
+                discounted_price_total += item.price * item.quantity;
+                total_savings += variant[0].compare_at_price * item.quantity;
+              }
+            }
+          });
+        
+        if (item.price > 0){
+          cart_items_html += '<span class="money">' + Shopify.formatMoney(item.price, $('body').data('money-format')) + '</span></strong>' + '</div>';
+        }
+        else{
+          cart_items_html += '<span class="money">' + 'Free' + '</span></strong>' + '</div>';
+        }
+      });
+      cart_action_html += '<span>Parziale</span>' +
+                          ' <span class="money">' +
+                            Shopify.formatMoney(cart.total_price, $('body').data('money-format')) +
+                          '</span>';
+      if(total_savings > 0 ) {
+        cart_savings_html = '<span class="right"><span class="money">' + Shopify.formatMoney(total_savings - discounted_price_total, $('body').data('money-format')) + '</span></span>' +
+            '<span>Risparmio totale</span>';
+      } else {
+        cart_savings_html = "";
+      }
+    }
+    $('.js-cart_items').html(cart_items_html);
+    $('.js-cart_subtotal').html(cart_action_html);
+    $('.js-cart_savings').html(cart_savings_html);
+    
+    setFreeShippingDistance(cart.total_price);
+}
+
+//SET ON AND OFF TO SACHETS ADDER/REMOVER
+var evalChecked = function(event){
+    let limit = 2;
+    $('.dav-minicart').each( function(){
+
+      let schetsAdded = $(this).attr("data-sachets");
+      let productsAdded = $(this).attr("data-products");
+      if( productsAdded == 0 ){
+        $(this).find('.sachet_list li input').attr('disabled',true).prop('checked',false);
+      }
+      else{
+        let numerOfSelected = $(this).find('.sachet_list li input:checked').length;
+        if(numerOfSelected < limit) {
+            $(this).find('.sachet_list li input').attr('disabled',false);
+        }
+        else if(numerOfSelected == limit) {
+            $(this).find('.sachet_list li input:not(:checked)').attr('disabled',true);
+        }
+        else if(numerOfSelected > limit) {
+            this.checked = false;
+        }
+      }
+    });
+};
+
+//FIRST SETUP OF SACHETS ADDER/REMOVER
+var setupSachetsData = function(){
+    $.getJSON('/cart.js', function(cart) {
+        // now have access to Shopify cart object
+        let items = cart.items;
+        let sachets_added = 0;
+        let products_added = 0;
+
+        Object.values(items).forEach(value => {
+          if (value.product_type == "sachet"){ // se e' un campioncino
+            if( sachets_added > 1 ){ // se gia' ne ho almeno due
+              changeSachetQuantity(value.variant_id, 0);
+            }
+            else{
+              if( value.quantity > 1 ){
+                changeSachetQuantity(value.variant_id, 1);
+              }
+              sachets_added = sachets_added + 1;
+              $('.dav-minicart').each( function(){
+                $(this).find('.sachet_list li input[data-variant_id="'+ value.variant_id +'"]').prop('checked',true);
+              });
+            }
+          }
+          else{
+            products_added = products_added + (1 * value.quantity);
+          }
+        }); // i sachet sono tutti unitari non ne sono piu' di due
+        $('.dav-minicart').each( function(){
+          $(this).attr("data-products", products_added).attr("data-sachets", sachets_added); // segno nei minicart la quantitaì di prodotti e campioncini presenti nel cart
+        });
+        if ( products_added < 1 && sachets_added > 0 ){
+          emptyCart(); // svuoti carrello
+          setupSachetsData(); // Rivaluto tutto
+        }
+        else{
+          evalChecked(); // sistemo i campioncini
+          setFreeShippingDistance( cart.total_price ); // sistemo le spese di spedizione
+        }
+    });
+};
+
+//NORMAL BEHAVIOR FOR SACHER ADDER/REMOVER
+$('.dav-minicart .sachet_list li input').change( function(event){
+    var variant_id = $(this).attr("data-variant_id");
+    if( this.checked == true ){
+        addSachetToCart(variant_id);
+    }
+    else{
+        removeSachetToCart(variant_id);
+    }
+    evalChecked();
+});
+
+//EXECUTED EACH TIME ORIGINAL BLOCK IS CALLED
+$( document ).on( "originalRefreshCart", function() {
+  setupSachetsData(); // Rivaluto tutto
+});
+
+
+
+
+var removeSachetGtmPush = function () {
+
+  var list ='';
+  
+  if (typeof template != 'undefined' && template == 'search') {
+    list = 'search_result';
+  } else {
+    list = 'cart';
+  }
+
+  $.ajax({
+    url: '/cart',
+      success: function () {
+        
+        $('.dav-shoppingbag .sachets .sachet_list li div input[type=checkbox]').click(function () {
+
+          var single_dose_name = $(this).attr('product-title');
+          var product_sku = $(this).attr('data-product-sku');
+          var variant_id = $(this).attr('data-variant_id');
+          var product_price = $(this).attr('product-price');
+          var product_brand = $(this).attr('product-brand');
+          var product_type = $(this).attr('product-type');
+
+          if(this.checked != true && typeof dataLayer == 'object'){
+
+            dataLayer.push({
+            'event': 'removeFromCart',
+            'ecommerce': {
+                'currencyCode': GTM.currency_code,
+                'remove': {
+                'actionField': {
+                    'list': list
+                },
+                'products': [{
+                    'name': GTM.formatString(single_dose_name),
+                    'id': variant_id,
+                    'price': product_price,
+                    'brand': GTM.formatString(product_brand),
+                    'category': GTM.formatString(product_type),
+                    'quantity': 1
+                }]
+                }
+            }
+            });
+
+            dataLayer.push({
+            'event': 'GAevent',
+            'eventID': '15',
+            'eventCategory': 'mini_cart',
+            'eventAction': 'remove_single_dose',
+            'eventLabel': GTM.formatString(single_dose_name),
+            'sku': product_sku
+            });
+            
+          }
+
+        });
+
+      }
+  });
+}
+
+removeSachetGtmPush();
+
+
+//EXECUT FIRST SETUP
+setupSachetsData();
