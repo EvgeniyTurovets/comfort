@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="16px" height="20px" viewBox="0 0 16 20" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: sketchtool 53.2 (72643) - https://sketchapp.com -->
+    <title>C4A631BA-A669-4DD6-BBA4-BCE7251996AC</title>
+    <desc>Created with sketchtool.</desc>
+    <defs>
+        <polygon id="path-1" points="0 0.934 16 0.934 16 21 0 21"></polygon>
+    </defs>
+    <g id="Events---desktop" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Events" transform="translate(-485.000000, -743.000000)">
+            <g id="Topbox-event" transform="translate(0.000000, 70.000000)">
+                <g id="Luogo" transform="translate(485.000000, 672.000000)">
+                    <g id="Icona">
+                        <g id="Group-3" transform="translate(0.000000, 0.066400)">
+                            <mask id="mask-2" fill="white">
+                                <use xlink:href="#path-1"></use>
+                            </mask>
+                            <g id="Clip-2"></g>
+                            <path d="M8,19.8564 C6.754,19.1094 1,15.3124 1,8.9334 C1,5.0744 4.141,1.9334 8,1.9334 C11.859,1.9334 15,5.0744 15,8.9334 C15,15.3004 9.245,19.1074 8,19.8564 M8,0.9334 C3.589,0.9334 0,4.5224 0,8.9334 C0,16.6444 7.447,20.7064 7.765,20.8754 L8,21.0004 L8.235,20.8754 C8.553,20.7064 16,16.6444 16,8.9334 C16,4.5224 12.411,0.9334 8,0.9334" id="Fill-1" fill="#7F7977" mask="url(#mask-2)"></path>
+                        </g>
+                        <path d="M8,11 C6.897,11 6,10.103 6,9 C6,7.897 6.897,7 8,7 C9.103,7 10,7.897 10,9 C10,10.103 9.103,11 8,11 M8,6 C6.346,6 5,7.346 5,9 C5,10.654 6.346,12 8,12 C9.654,12 11,10.654 11,9 C11,7.346 9.654,6 8,6" id="Fill-4" fill="#7F7977"></path>
+                    </g>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

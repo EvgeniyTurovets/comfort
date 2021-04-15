@@ -5526,3 +5526,21 @@ button.ssw-instagram-link:focus>img {
 .ssw-icon-database:before {
     content: '\e846';
 }
+
+.ssw-instagram-items {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0 -5px;
+}
+
+.ssw-instagram-item {
+    width: calc(100% / 4 - 10px);
+    margin: 5px;
+    display: block!important;
+}
+
+@media(max-width: 991px) {
+    .ssw-instagram-item {
+        width: calc(100% / 2 - 10px);
+    }
+}
