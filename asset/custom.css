@@ -1,0 +1,14 @@
+@media(max-width: 423px) {
+    .badges-list .product-badge .badge-text {
+        max-width: 80px;
+    }
+}
+
+.toggle_list-custom.opened {
+    display: block;
+    position: relative!important;
+}
+
+.main_nav_wrapper.active {
+    background: #fffefc;
+}
